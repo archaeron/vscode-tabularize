@@ -3,25 +3,94 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
+
+function findSequenceInLine(document : vscode.TextDocument, lineNumber : number, s : string) : number
+{
+    let line = document.lineAt(lineNumber);
+    return line.text.indexOf(s);
+}
+
+function findMaxIndex(lines : Map<number, number>)
+{
+    let lineIndices = Array.from(lines.values());
+    return Math.max(...lineIndices);
+}
+
+function findSequenceInLines(document : vscode.TextDocument, startLine : number, sequence : string) : Map<number, number>
+{
+    let lineNumber = startLine;
+    let lines : Map<number, number> = new Map;
+
+    let charIndex;
+    while((charIndex = findSequenceInLine(document, lineNumber, sequence)) != -1)
+    {
+        lines = lines.set(lineNumber, charIndex);
+        lineNumber = lineNumber + 1;
+    }
+    lineNumber = startLine - 1;
+    while((charIndex = findSequenceInLine(document, lineNumber, sequence)) != -1)
+    {
+        lines = lines.set(lineNumber, charIndex);
+        lineNumber = lineNumber - 1;
+    }
+    return lines;
+}
+
+function insertSpaces(editor : vscode.TextEditor, lines : Map<number, number>) : Thenable<boolean>
+{
+    let max = findMaxIndex(lines);
+
+    return editor.edit(e =>
+        {
+            lines.forEach((char, line) =>
+                {
+                    let filler = " ".repeat(max - char);
+                    let pos = new vscode.Position(line, char);
+                    e.insert(pos, filler)
+                }
+            )
+        }
+    );
+}
+
+function align(editor : vscode.TextEditor, sequence : string) : Thenable<boolean>
+{
+    let lineNumber = editor.selection.active.line
+    let indices = findSequenceInLines(editor.document, lineNumber, sequence)
+    return insertSpaces(editor, indices);
+}
+
 export function activate(context: vscode.ExtensionContext) {
 
-    // Use the console to output diagnostic information (console.log) and errors (console.error)
-    // This line of code will only be executed once when your extension is activated
-    console.log('Congratulations, your extension "vscode-tabularize" is now active!');
 
-    // The command has been defined in the package.json file
-    // Now provide the implementation of the command with  registerCommand
-    // The commandId parameter must match the command field in package.json
-    let disposable = vscode.commands.registerCommand('extension.sayHello', () => {
-        // The code you place here will be executed every time your command is executed
+    let tabularize = vscode.commands.registerCommand('vscode-tabularize.tabularize', () =>
+        {
+            if(vscode.window.activeTextEditor)
+            {
+                let editor = vscode.window.activeTextEditor
+                let text = editor.document.getText(editor.selection)
+                align(editor, text);
+            }
+        }
+    );
 
-        // Display a message box to the user
-        vscode.window.showInformationMessage('Hello World!');
-    });
+    let tabularizeInput = vscode.commands.registerCommand('vscode-tabularize.tabularize-input', () =>
+        {
+            let answer = vscode.window.showInputBox();
+            answer.then((text) =>
+                {
+                    if(vscode.window.activeTextEditor)
+                    {
+                        let editor = vscode.window.activeTextEditor
+                        align(editor, text);
+                    }
+                }
+            );
+        }
+    );
 
-    context.subscriptions.push(disposable);
+    context.subscriptions.push(tabularize);
+    context.subscriptions.push(tabularizeInput);
 }
 
 // this method is called when your extension is deactivated

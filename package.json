@@ -11,14 +11,36 @@
         "Other"
     ],
     "activationEvents": [
-        "onCommand:extension.sayHello"
+        "onCommand:vscode-tabularize.tabularize"
     ],
     "main": "./out/src/extension",
     "contributes": {
-        "commands": [{
-            "command": "extension.sayHello",
-            "title": "Hello World"
-        }]
+        "commands":
+        [
+            {
+                "command": "vscode-tabularize.tabularize",
+                "title": "Tabularize"
+            },
+            {
+                "command": "vscode-tabularize.tabularize-input",
+                "title": "Tabularize Input"
+            }
+        ],
+        "keybindings":
+        [
+            {
+                "command": "vscode-tabularize.tabularize",
+                "key": "ctrl+alt+a",
+                "mac": "ctrl+alt+a",
+                "when": "editorTextFocus"
+            },
+            {
+                "command": "vscode-tabularize.tabularize-input",
+                "key": "ctrl+alt+shift+a",
+                "mac": "ctrl+alt+shift+a",
+                "when": "editorTextFocus"
+            }
+        ]
     },
     "scripts": {
         "vscode:prepublish": "node ./node_modules/vscode/bin/compile",
